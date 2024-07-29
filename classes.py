@@ -21,6 +21,7 @@ class Game:
         self.you = 'X'
 
         self.start_game(client)
+        server.close()
 
     def connect(self, host, port):
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,6 +29,7 @@ class Game:
         print("Game is started!")
         self.you = 'O'
         self.start_game(client)
+        client.close()
     
     def move(self, x: int, y: int):
         self.field[x][y] = self.turn
