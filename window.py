@@ -124,7 +124,16 @@ class Ui_MainWindow(object):
 
         MainWindow.centralwidget = QtWidgets.QWidget(MainWindow)
         MainWindow.centralwidget.setObjectName("centralwidget")
-        MainWindow.centralwidget.setStyleSheet("background: #B28B5C")
+        MainWindow.centralwidget.setStyleSheet("background: #B28B5C;"
+                                                "border-left: 30px solid black;"
+                                                "border-top: 30px solid black;"
+                                                "border-left-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop: 0 #B28B5C, stop: 1 #BF9F78);"
+                                                "border-top-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop: 0 #B28B5C, stop: 1 #BF9F78);"
+                                                "border-right: 30px solid black;"
+                                                "border-bottom: 30px solid black;"
+                                                "border-right-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop: 0 #A07A4B, stop: 1 #B28B5C);"
+                                                "border-bottom-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop: 0 #A07A4B, stop: 1 #B28B5C);"
+                                               )
 
         MainWindow.upLabel = QtWidgets.QLabel(MainWindow.centralwidget)
         MainWindow.upLabel.setText("Waiting for oppenent")
@@ -170,6 +179,11 @@ class Ui_MainWindow(object):
                 btn.setFixedSize(const["CELL_SIZE"], const["CELL_SIZE"])
                 btn.clicked.connect(lambda state, x = i, y = j: MainWindow.cell_slot(x, y))
                 btn.setStyleSheet("background: rgba(255, 255, 255, 0.1)")
+                btn.setStyleSheet(
+                    "color: rgba(255, 255, 255, 0.3);"
+                    "font-size: 70px;"
+                    "font-weight: bold;"
+                )
 
         MainWindow.setCentralWidget(MainWindow.centralwidget)
 
