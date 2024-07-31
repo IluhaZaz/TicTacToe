@@ -54,6 +54,14 @@ class GameWindow(QtWidgets.QMainWindow):
             self.field[x][y].setText(self.turn)
             self.moves_cnt += 1
             self.turn = self.opponent if self.turn == self.you else self.you
+        self.winner = self.check_win()
+        match(self.winner):
+            case self.you:
+                self.upLabel.setText("You win!")
+            case "Tie":
+                self.upLabel.setText("Tie")
+            case self.opponent:
+                self.upLabel.setText("You lose!")
 
     def cell_slot(self, x: int, y: int):
         if self.turn == self.you and not self.winner:
@@ -86,18 +94,13 @@ class GameCycleThread(QtCore.QThread):
         while self.main_window.winner is None:
             if self.main_window.client:
                 if self.main_window.turn != self.main_window.you:
+                    self.main_window.upLabel.setText("Opponent's turn")
                     move = self.main_window.client.recv(3)
                     if move:
                         self.main_window.move(*list(map(int, move.decode("utf-8").split())))
-                self.main_window.winner = self.main_window.check_win()
-                sleep(0.5)
-        match(self.main_window.winner):
-            case self.main_window.you:
-                print("You win!")
-            case "Tie":
-                print("Tie")
-            case _:
-                print("You lose!")
+                else:
+                    self.main_window.upLabel.setText("Your turn")
+            sleep(1)
     
 
 class LoadingThread(QtCore.QThread):
@@ -117,20 +120,39 @@ class Ui_MainWindow(object):
 
         MainWindow.setObjectName("MainWindow")
         MainWindow.setWindowTitle("TicTacToe")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(800, 800)
 
         MainWindow.centralwidget = QtWidgets.QWidget(MainWindow)
         MainWindow.centralwidget.setObjectName("centralwidget")
         MainWindow.centralwidget.setStyleSheet("background: #B28B5C")
 
+        MainWindow.upLabel = QtWidgets.QLabel(MainWindow.centralwidget)
+        MainWindow.upLabel.setText("Waiting for oppenent")
+        MainWindow.upLabel.setAlignment(QtCore.Qt.AlignCenter)
+        MainWindow.upLabel.setGeometry(QtCore.QRect(175, round(0.4*const["CELL_SIZE"]), 
+                                                     const["CELL_SIZE"]*3, round(0.5*const["CELL_SIZE"]))
+                                        )
+        MainWindow.upLabel.setStyleSheet("background: rgba(255, 255, 255, 0.1);"
+                                         "border: 4px solid rgba(255, 255, 255, 0.2);"
+                                         "font-size: 30px;"
+                                         "color: rgba(0, 0, 0, 0.7);"
+                                         )
+        shadow = QtWidgets.QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(10)
+        shadow.setColor(QtGui.QColor(63, 63, 63, 255))
+        MainWindow.upLabel.setGraphicsEffect(shadow)
+
         MainWindow.gridLayoutWidget = QtWidgets.QWidget(MainWindow.centralwidget)
-        MainWindow.gridLayoutWidget.setGeometry(QtCore.QRect(140, 80, const["CELL_SIZE"]*3, const["CELL_SIZE"]*3))
+        MainWindow.gridLayoutWidget.setGeometry(QtCore.QRect(175, round(1.1*const["CELL_SIZE"]), const["CELL_SIZE"]*3, 
+                                                             const["CELL_SIZE"]*3)
+                                                )
         MainWindow.gridLayoutWidget.setObjectName("gridLayoutWidget")
         MainWindow.gridLayout = QtWidgets.QGridLayout(spacing = 0)
         MainWindow.gridLayoutWidget.setStyleSheet("border: 4px solid rgba(255, 255, 255, 0.1);")
 
         shadow = QtWidgets.QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(15)
+        shadow.setBlurRadius(10)
+        shadow.setColor(QtGui.QColor(63, 63, 63, 60))
         MainWindow.gridLayoutWidget.setGraphicsEffect(shadow)
 
 
