@@ -8,8 +8,8 @@ from window import GameWindow
 if __name__ == "__main__":
     
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = GameWindow()
+    MainWindow = GameWindow("localhost", 9999)
     MainWindow.show()
-    MainWindow.connect("localhost", 9999)
-    MainWindow.thread.start()
+    MainWindow.connect()
+    MainWindow.g_cycle_thread.start()
     sys.exit(app.exec_())

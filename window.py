@@ -2,6 +2,7 @@ import socket
 import json
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from time import sleep
 
 
 with open("constants.json", mode = 'r', encoding = "utf-8") as f:
@@ -9,7 +10,7 @@ with open("constants.json", mode = 'r', encoding = "utf-8") as f:
 
 
 class GameWindow(QtWidgets.QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self, host, port) -> None:
         super().__init__()
 
         self.field: list[list[QtWidgets.QPushButton]] = [[], [], []]
@@ -23,6 +24,11 @@ class GameWindow(QtWidgets.QMainWindow):
         ui.setupUi(self)
 
         self.client = None
+        self.host = host
+        self.port = port
+
+        self.g_cycle_thread = GameCycleThread(self)
+        self.loading_thread = LoadingThread(self, host, port)
     
     def create_connection(self, host, port):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -35,17 +41,13 @@ class GameWindow(QtWidgets.QMainWindow):
         self.you = 'X'
         self.opponent = 'O'
 
-        self.thread = GameCycleThread(self)
-
-    def connect(self, host, port):
+    def connect(self):
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((host, port))
+        client.connect((self.host, self.port))
 
         self.client = client
         self.you = 'O'
         self.opponent = 'X'
-
-        self.thread = GameCycleThread(self)
 
     def move(self, x: int, y: int):
         if self.field[x][y].text() == '':
@@ -60,17 +62,16 @@ class GameWindow(QtWidgets.QMainWindow):
             self.client.send(m.encode("utf-8"))
     
     def check_win(self):
-        prev_move: str = self.you if self.turn == self.opponent else self.opponent
         for row in self.field:
             if row[0].text() == row[1].text() == row[2].text() != '':
-                return prev_move
+                return row[0].text()
         for col in range(3):
             if self.field[0][col].text() == self.field[1][col].text() == self.field[2][col].text() != '':
-                return prev_move
+                return self.field[0][col].text()
         if self.field[0][0].text() == self.field[1][1].text() == self.field[2][2].text() != '':
-            return prev_move
+            return self.field[1][1].text()
         if self.field[0][2].text() == self.field[1][1].text() == self.field[2][0].text() != '':
-            return prev_move
+            return self.field[1][1].text()
         if self.moves_cnt == 9:
             return "Tie"
         return None
@@ -83,11 +84,13 @@ class GameCycleThread(QtCore.QThread):
 
     def run(self):
         while self.main_window.winner is None:
-            if self.main_window.turn != self.main_window.you:
-                move = self.main_window.client.recv(3)
-                if move:
-                    self.main_window.move(*list(map(int, move.decode("utf-8").split())))
-            self.main_window.winner = self.main_window.check_win()
+            if self.main_window.client:
+                if self.main_window.turn != self.main_window.you:
+                    move = self.main_window.client.recv(3)
+                    if move:
+                        self.main_window.move(*list(map(int, move.decode("utf-8").split())))
+                self.main_window.winner = self.main_window.check_win()
+                sleep(0.5)
         match(self.main_window.winner):
             case self.main_window.you:
                 print("You win!")
@@ -95,6 +98,17 @@ class GameCycleThread(QtCore.QThread):
                 print("Tie")
             case _:
                 print("You lose!")
+    
+
+class LoadingThread(QtCore.QThread):
+    def __init__(self, main_window: GameWindow, host, port) -> None:
+        super().__init__()
+        self.main_window = main_window
+        self.host = host
+        self.port = port
+
+    def run(self):
+        self.main_window.create_connection(self.host, self.port)
 
 
 class Ui_MainWindow(object):
