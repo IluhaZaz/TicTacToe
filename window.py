@@ -1,5 +1,6 @@
 import socket
 import json
+import pickle
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from time import sleep
@@ -66,8 +67,7 @@ class GameWindow(QtWidgets.QMainWindow):
     def cell_slot(self, x: int, y: int):
         if self.turn == self.you and not self.winner:
             self.move(x, y)
-            m = f"{x} {y}"
-            self.client.send(m.encode("utf-8"))
+            self.client.send(pickle.dumps((x, y)))
     
     def check_win(self):
         for row in self.field:
@@ -95,12 +95,13 @@ class GameCycleThread(QtCore.QThread):
             if self.main_window.client:
                 if self.main_window.turn != self.main_window.you:
                     self.main_window.upLabel.setText("Opponent's turn")
-                    move = self.main_window.client.recv(3)
+                    move = self.main_window.client.recv(4096)
                     if move:
-                        self.main_window.move(*list(map(int, move.decode("utf-8").split())))
+                        move = pickle.loads(move)
+                        self.main_window.move(*move)
                 else:
                     self.main_window.upLabel.setText("Your turn")
-            sleep(1)
+            sleep(0.5)
     
 
 class LoadingThread(QtCore.QThread):
@@ -174,12 +175,11 @@ class Ui_MainWindow(object):
             for j in range(3):
                 btn = QtWidgets.QPushButton(MainWindow.gridLayoutWidget)
                 MainWindow.field[i].append(btn)
-                btn.setObjectName("pushButton")
                 MainWindow.gridLayout.addWidget(btn, i, j, 1, 1)
                 btn.setFixedSize(const["CELL_SIZE"], const["CELL_SIZE"])
                 btn.clicked.connect(lambda state, x = i, y = j: MainWindow.cell_slot(x, y))
-                btn.setStyleSheet("background: rgba(255, 255, 255, 0.1)")
                 btn.setStyleSheet(
+                    "background: rgba(255, 255, 255, 0.1);"
                     "color: rgba(255, 255, 255, 0.3);"
                     "font-size: 70px;"
                     "font-weight: bold;"
